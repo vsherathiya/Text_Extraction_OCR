@@ -41,7 +41,7 @@ def process_image(file_path):
         
         # Load the original image
         original_image = cv2.imread(file_path)
-        darkness_factor = 1.25
+        darkness_factor = 1.28
 
         # Read the image with OpenCV
         image = cv2.imread(file_path)
@@ -65,7 +65,7 @@ def process_image(file_path):
         extracted_data = []
 
         # Define a regex pattern to match dimensions like "11'-0" x 13'-0" and square yard areas like "200 sq. yd"
-        pattern = r'(\d{1,2}[\'\"]?\s?[-.]?\s?\d{1,2}[\'\"]?"\s?[xX*]\s?\d{1,2}[\'\"]?\s?[-.]?\s?\d{1,2}[\'\"]?)|(\d+\.?\d*)\s?sq\.?\s?yd'
+        pattern = r'(\d{1,2})[\'\"*]?\s?[-.]?\s?(\d{1,2})[\'\"*]?"?\s?[xX*]?\s?(\d{1,2})[\'\"*]?\s?[-.]?\s?(\d{1,2})[\'\"*]?'
 
         # Define an avoidance pattern to skip certain patterns during extraction
         avoid_pattern = r'^\d{4}\s?[*xX]\s?\d{4}$'
@@ -87,7 +87,7 @@ def process_image(file_path):
                 # If the match is a dimension pattern
                 if match.group(1):
                     # Calculate the square yard area
-                    dimensions = re.findall(r'(\d{1,2}[\'\"]?\s?[-.]?\s?\d{1,2}[\'\"]?"\s?[xX*]\s?\d{1,2}[\'\"]?\s?[-.]?\s?\d{1,2}[\'\"]?)', text)
+                    dimensions = re.findall(r'(\d{1,2})[\'\"*]?\s?[-.]?\s?(\d{1,2})[\'\"*]?"?\s?[xX*]?\s?(\d{1,2})[\'\"*]?\s?[-.]?\s?(\d{1,2})[\'\"*]?', text)
                     area = 1.0  # Default value
                     if dimensions:
                         # Extract the dimensions and calculate the area
@@ -216,6 +216,7 @@ def upload_image():
             # Process the uploaded image
             processed_image, extracted_data = process_image(filename)
 
+            type(processed_image)
             if processed_image:
                 # Calculate the total square yard area
                 total_sqyd_area = sum(data['sqyd_area'] for data in extracted_data if data.get('sqyd_area') is not None)
