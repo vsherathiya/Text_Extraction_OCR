@@ -2,7 +2,8 @@ import os
 import re
 import cv2
 import easyocr
-import pytesseract
+# import pytesseract
+import pandas as pd
 
 import numpy as np
 from flask import Flask, request, render_template, redirect, url_for
@@ -22,7 +23,7 @@ app.config['SECRET_KEY'] = 'your_secret_key_here'  # Replace with a strong secre
 
 # Define the square yard area calculation function
 def calculate_area(dimensions):
-    feet_inches_pattern = r'(\d{1,2})[\'\"*]?\s?[-.]?\s?(\d{1,2})[\'\"*]?"?\s?[xX*]?\s?(\d{1,2})[\'\"*]?\s?[-.]?\s?(\d{1,2})[\'\"*]?'
+    feet_inches_pattern = r'(\d{1,2})[\'\"*]?\s?[-.]?\s?(\d{1,2})[\'\"*]?"?\s?[xX*]?\s?(\d{1,2})[\'\"*]?\s?[*-.]?\s?(\d{1,2})[\'\"*]?'
 
     match = re.match(feet_inches_pattern, dimensions)
 
@@ -40,11 +41,15 @@ def process_image(file_path):
     try:
         
         # Load the original image
-        original_image = cv2.imread(file_path)
+        image = cv2.imread(file_path)
+        image = cv2.resize(image, (2667,1500))
+        # The `darkness_factor` is a parameter used to control the darkness of the image. It is used
+        # to enhance the image by adjusting its brightness. The value of `1.28` is used to darken the
+        # image by a factor of 1.28. This is done to improve the readability of the text in the image
+        # before performing text extraction.
         darkness_factor = 1.28
 
         # Read the image with OpenCV
-        image = cv2.imread(file_path)
 
         # Convert the OpenCV image to a Pillow image
         pillow_image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
@@ -65,7 +70,7 @@ def process_image(file_path):
         extracted_data = []
 
         # Define a regex pattern to match dimensions like "11'-0" x 13'-0" and square yard areas like "200 sq. yd"
-        pattern = r'(\d{1,2})[\'\"*]?\s?[-.]?\s?(\d{1,2})[\'\"*]?"?\s?[xX*]?\s?(\d{1,2})[\'\"*]?\s?[-.]?\s?(\d{1,2})[\'\"*]?'
+        pattern = r'(\d{1,2}[\'\"]?\s?[-.]?\s?\d{1,2}[\'\"]?"\s?[xX*]\s?\d{1,2}[\'\"]?\s?[-.]?\s?\d{1,2}[\'\"]?)|(\d+\.?\d*)\s?sq\.?\s?yd'
 
         # Define an avoidance pattern to skip certain patterns during extraction
         avoid_pattern = r'^\d{4}\s?[*xX]\s?\d{4}$'
@@ -87,7 +92,7 @@ def process_image(file_path):
                 # If the match is a dimension pattern
                 if match.group(1):
                     # Calculate the square yard area
-                    dimensions = re.findall(r'(\d{1,2})[\'\"*]?\s?[-.]?\s?(\d{1,2})[\'\"*]?"?\s?[xX*]?\s?(\d{1,2})[\'\"*]?\s?[-.]?\s?(\d{1,2})[\'\"*]?', text)
+                    dimensions = re.findall(r'(\d{1,2}[\'\"]?\s?[-.]?\s?\d{1,2}[\'\"]?"\s?[xX*]\s?\d{1,2}[\'\"]?\s?[-.]?\s?\d{1,2}[\'\"]?)', text)
                     area = 1.0  # Default value
                     if dimensions:
                         # Extract the dimensions and calculate the area
@@ -107,7 +112,7 @@ def process_image(file_path):
                 extracted_data.append({'text': text, 'bbox': bbox})
 
         # Create a copy of the original image for drawing boxes and text annotations
-        output_image = original_image.copy()
+        output_image = image.copy()
 
         for data in extracted_data:
             bbox = data['bbox']
@@ -215,8 +220,10 @@ def upload_image():
 
             # Process the uploaded image
             processed_image, extracted_data = process_image(filename)
-
-            type(processed_image)
+            print(extracted_data)
+            df = pd.DataFrame(extracted_data)
+            print(df)
+            df.to_csv('new.csv')
             if processed_image:
                 # Calculate the total square yard area
                 total_sqyd_area = sum(data['sqyd_area'] for data in extracted_data if data.get('sqyd_area') is not None)
