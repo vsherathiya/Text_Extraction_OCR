@@ -42,12 +42,12 @@ def process_image(file_path):
         
         # Load the original image
         image = cv2.imread(file_path)
-        image = cv2.resize(image, (2667,1500))
+        image = cv2.resize(image, (2600,1600))
         # The `darkness_factor` is a parameter used to control the darkness of the image. It is used
         # to enhance the image by adjusting its brightness. The value of `1.28` is used to darken the
         # image by a factor of 1.28. This is done to improve the readability of the text in the image
         # before performing text extraction.
-        darkness_factor = 1.28
+        darkness_factor = 1.27
 
         # Read the image with OpenCV
 
